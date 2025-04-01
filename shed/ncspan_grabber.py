@@ -70,7 +70,7 @@ def is_stream_live_or_exit(url, logger):
 
         if is_live and not was_live:
             if scheduled_ts:
-                scheduled_time = datetime.utcfromtimestamp(scheduled_ts).strftime("%Y-%m-%d %H:%M:%S UTC")
+                scheduled_time = datetime.fromtimestamp(scheduled_ts, UTC).strftime("%Y-%m-%d %H:%M:%S UTC")
                 logger.info(f"Stream is scheduled to go live at {scheduled_time}. Exiting.")
             else:
                 logger.info("Stream is scheduled but no start time is available. Exiting.")
