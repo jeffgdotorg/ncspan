@@ -97,6 +97,7 @@ def download_with_timeout(url, output_path, duration, logger, free_formats=False
         format_selector = "best"
 
     ydl_opts = {
+        'nopart': True,
         'outtmpl': output_path,
         'format': format_selector,
         'noplaylist': True,
