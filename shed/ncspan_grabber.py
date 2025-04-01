@@ -2,7 +2,7 @@ import threading
 import time
 import logging
 import argparse
-from datetime import datetime
+from datetime import datetime, UTC
 from yt_dlp import YoutubeDL
 import os
 import shutil
@@ -87,9 +87,10 @@ def is_stream_live_or_exit(url, logger):
 
 # --- Download function ---
 def download_with_timeout(url, output_path, duration, logger, free_formats=False, max_resolution=None, legacy_server_connect=False):
-    start_time = datetime.utcnow()
+    start_time = datetime.now(UTC)
     stop_flag = threading.Event()
 
+    # Construct format selector for resolution constraint
     if max_resolution:
         format_selector = f"bestvideo[height<={max_resolution}]+bestaudio/best[height<={max_resolution}]/best"
     else:
@@ -101,7 +102,7 @@ def download_with_timeout(url, output_path, duration, logger, free_formats=False
         'noplaylist': True,
         'live_from_start': True,
         'prefer_free_formats': free_formats,
-        'legacy_server_connect': legacy_server_connect,
+        'legacyserverconnect': legacy_server_connect,
         'logger': YtDlpLogger(logger),
         'progress_hooks': [
             lambda d: stop_flag.is_set() and (_ for _ in ()).throw(Exception("Timeout reached"))
@@ -117,6 +118,7 @@ def download_with_timeout(url, output_path, duration, logger, free_formats=False
 
     thread = threading.Thread(target=run_downloader)
     thread.start()
+
     thread.join(timeout=duration)
 
     if thread.is_alive():
@@ -124,8 +126,9 @@ def download_with_timeout(url, output_path, duration, logger, free_formats=False
         stop_flag.set()
         thread.join()
 
-    end_time = datetime.utcnow()
+    end_time = datetime.now(UTC)
     logger.info(f"Download complete. Started at {start_time}, ended at {end_time}")
+
     return start_time, end_time
 
 # --- Write Internet Archive files ---
@@ -135,7 +138,7 @@ def write_internet_archive_metadata_files(output_dir, identifier, filename, titl
 
     with open(files_xml_path, "w") as f:
         f.write(f"""<files>
-  <file name="{filename}"/>
+  <file name=\"{filename}\"/>
 </files>
 """)
 
@@ -160,7 +163,7 @@ def generate_timestamped_output_template(start: datetime, end: datetime, prefix:
 def main():
     parser = argparse.ArgumentParser(description="Download a YouTube live stream or direct media stream with timeout.")
     parser.add_argument("url", help="YouTube live stream URL or generic audio/video stream")
-    parser.add_argument("-o", "--output", help="Explicit output filename template (e.g. video.%(ext)s)")
+    parser.add_argument("-o", "--output", help="Explicit output filename template (e.g. video.%%(ext)s)")
     parser.add_argument("-d", "--duration", type=int, default=60, help="Max download duration in seconds")
     parser.add_argument("--debug", action="store_true", help="Enable debug logging")
     parser.add_argument("--log-file", help="Optional log file path")
@@ -180,7 +183,7 @@ def main():
     os.makedirs(args.output_dir, exist_ok=True)
     logger.info("Starting download...")
 
-    if 'youtu' in args.url:
+    if 'youtube.com' in args.url or 'youtu.be' in args.url:
         stream_type = is_stream_live_or_exit(args.url, logger)
     else:
         logger.info("Non-YouTube URL detected. Skipping live stream check.")
