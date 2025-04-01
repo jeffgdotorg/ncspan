@@ -184,7 +184,9 @@ def main():
     logger.info("Starting download...")
 
     if 'youtube.com' in args.url or 'youtu.be' in args.url:
-        stream_type = is_stream_live_or_exit(args.url, logger)
+#        stream_type = is_stream_live_or_exit(args.url, logger)
+        logger.info("Skipping live stream check for now because it seems to lie.")
+        stream_type = "structured"
     else:
         logger.info("Non-YouTube URL detected. Skipping live stream check.")
         stream_type = "generic"
